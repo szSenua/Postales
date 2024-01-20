@@ -29,6 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
         }
     }
 
+    //Testeo de que muestra solo el email.
+    //var_dump($destinatarios);
+
     if (empty($_POST['mensaje'])) {
         $errores[] = 'El mensaje no puede estar vacío';
     } else {
@@ -71,8 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
         pintaConParametros($destinatarios, $mensaje, $imagenSeleccionada, $errores, $clientes, $temaSeleccionado, $subcarpetas);
     } else {
 
+
         //Si el array de errores está vacío, manda el email
 
+        enviarEmail($destinatarios, $asunto, $mensaje, $imagenSeleccionada, 'cristina@domenico.es', 'admin1234');
 
 
     }

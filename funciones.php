@@ -185,8 +185,46 @@ function pintaConParametros($destinatarios, $mensaje, $imagenSeleccionada, $erro
 
 //función para mandar la postal
 
-function mandaPostal($destinatarios, $asunto, $mensaje, $imagenSeleccionada){
+function enviarEmail($destinatarios, $asunto, $mensaje, $imagenSeleccionada, $usuario, $pass){
+    
+    include_once('PHPMailer-master/src/PHPMailer.php');
+    include_once('PHPMailer-master/src/SMTP.php');
 
+   $mail = new PHPMailer();
+   //$mail->PluginDir = "PracticaPostales/PHPMailer-master/PHPMailer-master/";  // Not needed if PHPMailer files are in the same directory
+   $mail->isSMTP();
+   $mail->Mailer = "SMTP";
+   $mail->SMTPAuth = true;
+   $mail->isHtml(true);
+   $mail->SMTPAutoTLS = false;
+   $mail->Port = 25;
+   $mail->CharSet = 'UTF-8';
+   $mail->Host = "localhost";
+   $mail->Username = $usuario;
+   $mail->Password = $pass;
+   $mail->setFrom("cristina@domenico.es");
+   $mail->SMTPDebug = 2;  // Enable verbose debug output
+
+   if(is_array($destinatarios)){
+
+       foreach ($destinatarios as $destinatario) {
+           $mail->addAddress($destinatario);
+    }
+  
+  $mail->Subject = $asunto;
+  $mail->Body = $mensaje;
+
+  // Cuerpo del mensaje con la imagen seleccionada
+  $body .= "<img src='$imagenSeleccionada' alt='Imagen'>";
+  
+  if(!$mail->send()){
+       echo $mail->ErrorInfo;
+  } else {
+    //El email ha sido enviado.
+       header('Location: confirmacionEnvio.php');
+  }
+
+    }
 }
 
 ?>
