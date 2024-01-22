@@ -11,6 +11,7 @@ $destinatarios = array();
 $mensaje = "";
 $asunto = ""; // Dependerá de la temática del mensaje
 $imagenSeleccionada = "";
+$temaSeleccionado="";
 $errores = array();
 
 // Verificar si se ha enviado el formulario
@@ -40,25 +41,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
 
     // Dependiendo del tema se pone un asunto u otro
     if (isset($_POST['tema'])) {
-        $tema = $_POST['tema'];
+        $temaSeleccionado = $_POST['tema'];
 
-        switch ($tema) {
+        switch ($temaSeleccionado) {
             case 'navidad':
-                $asunto = '¡Feliz Navidad';
+                $asunto = '¡Feliz Navidad!';
                 break;
 
             case 'bodas':
                 $asunto = '¡Enhorabuena!';
                 break;
 
-            case 'cumpleaños':
-                $asunto = '¡Que cumplas muchos más';
+            case 'cumpleanos':
+                $asunto = '¡Que cumplas muchos más!';
                 break;
 
             default:
                 $asunto = 'Sin Asunto';
                 break;
         }
+    } 
+
+    if(empty($temaSeleccionado)){
+        $errores [] = 'Debe seleccionar un tema';
     }
 
     if (isset($_POST['imagen'])) {
@@ -67,17 +72,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
         $errores[] = 'Debe escoger una imagen';
     }
 
+    $rutaImagenCompleta = '';
+
+    if ($temaSeleccionado !== '' && $imagenSeleccionada !== '') {
+        $rutaImagenCompleta = 'temas/' . $temaSeleccionado . '/' . $imagenSeleccionada;
+    }
+
+
     // Si el array de errores no está vacío, repintar
     if (count($errores) > 0) {
         $temaSeleccionado = isset($_POST['tema']) ? $_POST['tema'] : '';
         $subcarpetas = array_filter(glob('temas/*'), 'is_dir');
-        pintaConParametros($destinatarios, $mensaje, $imagenSeleccionada, $errores, $clientes, $temaSeleccionado, $subcarpetas);
+        pintaConParametros($destinatarios, $mensaje, $rutaImagenCompleta, $errores, $clientes, $temaSeleccionado, $subcarpetas);
+        //var_dump($imagenSeleccionada);
     } else {
 
 
         //Si el array de errores está vacío, manda el email
 
-        enviarEmail($destinatarios, $asunto, $mensaje, $imagenSeleccionada, 'cristina@domenico.es', 'admin1234');
+        enviarEmail($destinatarios, $asunto, $mensaje, $rutaImagenCompleta, 'christina@domenico.es', 'admin123');
 
 
     }
@@ -192,45 +205,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
         <br>
 
         <label for="tema">Tema:</label>
-        <select id="tema" name="tema" onchange="this.form.submit()">
-            <?php
-            $ruta_temas = 'temas';
-            $subcarpetas = array_filter(glob($ruta_temas . '/*'), 'is_dir');
+<select id="tema" name="tema" onchange="this.form.submit()">
+    <option value="" <?php echo empty($_POST['tema']) ? 'selected' : ''; ?>>Seleccione un tema</option>
+    <?php
+    $ruta_temas = 'temas';
+    $subcarpetas = array_filter(glob($ruta_temas . '/*'), 'is_dir');
 
-            foreach ($subcarpetas as $subcarpeta) {
-                $nombre_subcarpeta = basename($subcarpeta);
-                echo "<option value=\"$nombre_subcarpeta\"";
-                if (isset($_POST['tema']) && $_POST['tema'] === $nombre_subcarpeta) {
-                    echo " selected";
-                }
-                echo ">$nombre_subcarpeta</option>";
-            }
-            ?>
-        </select>
+    foreach ($subcarpetas as $subcarpeta) {
+        $nombre_subcarpeta = basename($subcarpeta);
+        echo "<option value=\"$nombre_subcarpeta\"";
+        if (isset($_POST['tema']) && $_POST['tema'] === $nombre_subcarpeta) {
+            echo " selected";
+        }
+        echo ">$nombre_subcarpeta</option>";
+    }
+    ?>
+</select>
+
 
         <div id="checkboxes-container">
-            <?php
-            $temaSeleccionado = isset($_POST['tema']) ? $_POST['tema'] : '';
+    <?php
+    $temaSeleccionado = isset($_POST['tema']) ? $_POST['tema'] : '';
 
-            foreach ($subcarpetas as $subcarpeta) {
-                $nombre_subcarpeta = basename($subcarpeta);
-                $mostrar = $temaSeleccionado === $nombre_subcarpeta;
-                $imagenes = glob($subcarpeta . '/' . $temaSeleccionado . '*.jpg');
+    // Solo mostrar imágenes si se ha seleccionado un tema
+    if (!empty($temaSeleccionado)) {
+        foreach ($subcarpetas as $subcarpeta) {
+            $nombre_subcarpeta = basename($subcarpeta);
+            $mostrar = $temaSeleccionado === $nombre_subcarpeta;
+            $imagenes = glob($subcarpeta . '/' . $temaSeleccionado . '*.jpg');
 
-                foreach ($imagenes as $imagen) {
-                    $nombre_imagen = basename($imagen);
-                    echo "<label>";
-                    echo "<img src=\"$imagen\" alt=\"$nombre_imagen\" width=\"100\">";
-                    echo "<input type=\"radio\" name=\"imagen\" value=\"$nombre_imagen\"";
-                    if ($mostrar && isset($_POST['imagen']) && $_POST['imagen'] === $nombre_imagen) {
-                        echo " checked";
-                    }
-                    echo ">";
-                    echo "</label>";
+            foreach ($imagenes as $imagen) {
+                $nombre_imagen = basename($imagen);
+                echo "<label>";
+                echo "<img src=\"$imagen\" alt=\"$nombre_imagen\" width=\"100\">";
+                echo "<input type=\"radio\" name=\"imagen\" value=\"$nombre_imagen\"";
+                if ($mostrar && isset($_POST['imagen']) && $_POST['imagen'] === $nombre_imagen) {
+                    echo " checked";
                 }
+                echo ">";
+                echo "</label>";
             }
-            ?>
-        </div>
+        }
+    }
+    ?>
+</div>
 
         <input type="submit" name="enviar"value="Enviar">
     </form>

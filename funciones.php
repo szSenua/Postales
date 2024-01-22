@@ -73,7 +73,7 @@
             margin-bottom: 5px;
         }
 
-        input[type="submit"] {
+        input[type="submit"], button {
             background-color: #4caf50;
             color: #fff;
             padding: 10px 15px;
@@ -143,7 +143,8 @@ function pintaConParametros($destinatarios, $mensaje, $imagenSeleccionada, $erro
         <textarea name="mensaje" rows="4">' . $mensaje . '</textarea>
         <br>
         <label for="tema">Tema:</label>
-        <select id="tema" name="tema" onchange="this.form.submit()">';
+        <select id="tema" name="tema" onchange="this.form.submit()">
+            <option value="" ' . (empty($temaSeleccionado) ? 'selected' : '') . '>Seleccione un tema</option>';
 
     // Mostrar opciones de tema
     foreach ($subcarpetas as $subcarpeta) {
@@ -159,22 +160,23 @@ function pintaConParametros($destinatarios, $mensaje, $imagenSeleccionada, $erro
         <div id="checkboxes-container">';
 
     // Mostrar checkboxes para las imágenes
-    foreach ($subcarpetas as $subcarpeta) {
-        $nombre_subcarpeta = basename($subcarpeta);
-        $mostrar = $temaSeleccionado === $nombre_subcarpeta;
-        $imagenes = glob($subcarpeta . '/' . $temaSeleccionado . '*.jpg');
+    if (!empty($temaSeleccionado)) {
+        foreach ($subcarpetas as $subcarpeta) {
+            $nombre_subcarpeta = basename($subcarpeta);
+            $mostrar = $temaSeleccionado === $nombre_subcarpeta;
+            $imagenes = glob($subcarpeta . '/' . $temaSeleccionado . '*.jpg');
 
-        foreach ($imagenes as $imagen) {
-            $nombre_imagen = basename($imagen);
-            echo "<label>";
-            echo "<img src=\"$imagen\" alt=\"$nombre_imagen\" width=\"100\">";
-            echo "<input type=\"radio\" name=\"imagen\" value=\"$nombre_imagen\"";
-            if ($mostrar && $imagen === $imagenSeleccionada) {
-                echo " checked";
+            foreach ($imagenes as $imagen) {
+                $nombre_imagen = basename($imagen);
+                echo "<label>";
+                echo "<img src=\"$imagen\" alt=\"$nombre_imagen\" width=\"100\">";
+                echo "<input type=\"radio\" name=\"imagen\" value=\"$nombre_imagen\"";
+                if ($mostrar && $imagen === $imagenSeleccionada) {
+                    echo " checked";
+                }
+                echo ">";
+                echo "</label>";
             }
-            echo ">";
-           
-            echo "</label>";
         }
     }
 
@@ -183,49 +185,55 @@ function pintaConParametros($destinatarios, $mensaje, $imagenSeleccionada, $erro
     </form>';
 }
 
+
 //función para mandar la postal
 
-function enviarEmail($destinatarios, $asunto, $mensaje, $imagenSeleccionada, $usuario, $pass){
-    
+function enviarEmail($destinatarios, $asunto, $mensaje, $rutaImagenCompleta, $usuario, $pass) {
     include_once('PHPMailer-master/src/PHPMailer.php');
     include_once('PHPMailer-master/src/SMTP.php');
 
-   $mail = new PHPMailer();
-   //$mail->PluginDir = "PracticaPostales/PHPMailer-master/PHPMailer-master/";  // Not needed if PHPMailer files are in the same directory
-   $mail->isSMTP();
-   $mail->Mailer = "SMTP";
-   $mail->SMTPAuth = true;
-   $mail->isHtml(true);
-   $mail->SMTPAutoTLS = false;
-   $mail->Port = 25;
-   $mail->CharSet = 'UTF-8';
-   $mail->Host = "localhost";
-   $mail->Username = $usuario;
-   $mail->Password = $pass;
-   $mail->setFrom("cristina@domenico.es");
-   $mail->SMTPDebug = 2;  // Enable verbose debug output
+    $mail = new PHPMailer();
+    $mail->isSMTP();
+    $mail->Mailer = "SMTP";
+    $mail->SMTPAuth = true;
+    $mail->isHtml(true);
+    $mail->SMTPAutoTLS = false;
+    $mail->Port = 25;
+    $mail->CharSet = 'UTF-8';
+    $mail->Host = "localhost";
+    $mail->Username = $usuario;
+    $mail->Password = $pass;
+    $mail->setFrom("christina@domenico.es");
+    //$mail->SMTPDebug = 2;  // Enable verbose debug output
 
-   if(is_array($destinatarios)){
+    if (is_array($destinatarios)) {
+        foreach ($destinatarios as $destinatario) {
+            $mail->addAddress($destinatario);
+        }
 
-       foreach ($destinatarios as $destinatario) {
-           $mail->addAddress($destinatario);
-    }
-  
-  $mail->Subject = $asunto;
-  $mail->Body = $mensaje;
 
-  // Cuerpo del mensaje con la imagen seleccionada
-  $body .= "<img src='$imagenSeleccionada' alt='Imagen'>";
-  
-  if(!$mail->send()){
-       echo $mail->ErrorInfo;
-  } else {
-    //El email ha sido enviado.
-       header('Location: confirmacionEnvio.php');
-  }
+        $mail->Subject = $asunto;
+        $mail -> Body = $mensaje . '<img src="cid:my-image" alt="" />';
+        $mail->addEmbeddedImage($rutaImagenCompleta, 'my-image', 'attachment', 'base64', 'image/jpeg');
 
+        $mail->addAttachment($rutaImagenCompleta); 
+
+        // Cuerpo del mensaje con la imagen seleccionada
+        
+
+        if (!$mail->send()) {
+            echo $mail->ErrorInfo;
+         
+        } else {
+            // El email ha sido enviado.
+            echo '<h2>Postales enviadas con éxito</h2>';
+
+            //Arreglar el botón
+            echo '<br><a href="index.php"><button name="volver">Volver</button></a>';
+        }
     }
 }
+
 
 ?>
 </body>
